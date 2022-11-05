@@ -6,7 +6,14 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import InvalidSessionIdException
 
-LOGGER = logging.getLogger(__name__)
+logging.basicConfig(filename='RandomBotLogger.log', level=logging.INFO)
+LOGGER = logging.getLogger()
+consoleHandler = logging.StreamHandler()
+consoleHandler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s–%(name)s– %(levelname)s:%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+consoleHandler.setFormatter(formatter)
+LOGGER.addHandler(consoleHandler)
+
 driver = webdriver.Firefox()
 driver.get("http://localhost:3000")
 
@@ -20,7 +27,6 @@ class Tags():
     square7 = "(//div[contains(@class, 'board-row')]//button[contains(@class, 'square')])[7]"
     square8 = "(//div[contains(@class, 'board-row')]//button[contains(@class, 'square')])[8]"
     square9 = "(//div[contains(@class, 'board-row')]//button[contains(@class, 'square')])[9]"
-    ohSquare = "//div[contains(@class, 'board-row')]//button[contains(text(), 'O')]"
     winner = "//div[contains(@class, 'game-info')]//div[contains(text(), 'Winner:')]"
     tie = "//div[contains(@class, 'game-info')]//div[contains(text(), 'tie')]"
 
@@ -30,46 +36,40 @@ def playTTT():
                Tags.square4,Tags.square5,Tags.square6,
                Tags.square7,Tags.square8,Tags.square9]
 
-    clickedSquares = []
     random_square = randint(0,8)
     time.sleep(5)
-
-    if not clickedSquares:
-        LOGGER.debug("I made it into the first if statement")
-        element = driver.find_element(By.XPATH, squares[random_square])
-        element.click()
-        clickedSquares.append(random_square)
 
     try:
         driver.find_element(By.XPATH, Tags.winner).is_displayed()
         text = driver.find_element(By.XPATH, Tags.winner).text
-        print(str(text))
+        LOGGER.info(str(text))
+        driver.save_screenshot("screenshot.png")
         driver.close()
     except NoSuchElementException:
         pass
     try:
         driver.find_element(By.XPATH, Tags.tie).is_displayed()
-        print("Tie")
+        LOGGER.info("Tie")
+        driver.save_screenshot("screenshot.png")
         driver.close()
     except NoSuchElementException:
         pass
 
     try:
-        for i in range(0,9):
-            if squares[i] == Tags.ohSquare:
-                clickedSquares.append(i)
-
-        for i in clickedSquares:
-            LOGGER.debug("I made it into the second for loop")
-            if i == random_square:
-                LOGGER.debug("I made it into the second if statement")
-                playTTT()
+        for i in range(len(squares)):
+            text = driver.find_element(By.XPATH, squares[random_square]).text
+            if text == 'O':
+                LOGGER.info("Square " + str(random_square) + " marked by O.")
+                break
+            elif text == 'X':
+                LOGGER.info("Square " + str(random_square) + " already marked by X.")
+                break
             else:
-                LOGGER.debug("I made it into the first else statement")
-                clickedSquares.append(random_square)
-        
-        element = driver.find_element(By.XPATH, squares[random_square])
-        element.click()
+                element = driver.find_element(By.XPATH, squares[random_square])
+                element.click()
+                LOGGER.info("Clicking square:" + str(random_square))
+                break
+        playTTT()
     except InvalidSessionIdException:
         pass
 
